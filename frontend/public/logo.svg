@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8" />
+    </linearGradient>
+  </defs>
+  <!-- Outer 360 orbit ring -->
+  <circle cx="50" cy="50" r="42" stroke="url(#ringGrad)" stroke-width="2.5" stroke-dasharray="8 4" />
+  <!-- Aperture / Lens housing -->
+  <circle cx="50" cy="50" r="32" stroke="#1e293b" stroke-width="4" fill="#0f172a" />
+  <circle cx="50" cy="50" r="28" stroke="url(#lensGrad)" stroke-width="2" />
+  <!-- Glass lens reflection -->
+  <ellipse cx="44" cy="42" rx="10" ry="6" fill="#38bdf8" fill-opacity="0.25" transform="rotate(-30 44 42)" />
+  <!-- Core pupil / aperture indicator -->
+  <circle cx="50" cy="50" r="12" fill="url(#lensGrad)" />
+  <circle cx="53" cy="47" r="3.5" fill="#ffffff" fill-opacity="0.8" />
+  <!-- 360 degree degree tick marks -->
+  <path d="M 50 4 L 50 10" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" />
+  <path d="M 50 90 L 50 96" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" />
+  <path d="M 4 50 L 10 50" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" />
+  <path d="M 90 50 L 96 50" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" />
+</svg>
