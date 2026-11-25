@@ -119,3 +119,41 @@ def extract_features_for_sequence(
         feats = extract_orb_features(gray, image_index=idx, filename=fname, n_features=n_features)
         features_list.append(feats)
     return features_list
+
+
+def detect_and_compute_features(
+    image_bgr: np.ndarray, method: str = "SIFT", max_features: int = 2500
+) -> Tuple[List[cv2.KeyPoint], Optional[np.ndarray]]:
+    """
+    Extracts scale- and rotation-invariant keypoints and descriptors from an image.
+    Uses SIFT by default with fallback to ORB.
+    """
+    if len(image_bgr.shape) == 3:
+        gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image_bgr
+    if method.upper() == "SIFT":
+        try:
+            sift = cv2.SIFT_create(nfeatures=max_features)
+            kps, des = sift.detectAndCompute(gray, None)
+            return kps if kps is not None else [], des
+        except Exception:
+            pass
+    orb = cv2.ORB_create(nfeatures=max_features)
+    kps, des = orb.detectAndCompute(gray, None)
+    return kps if kps is not None else [], des
+
+
+
+def detect_and_compute_features(
+    image_bgr: np.ndarray, method: str = "ORB", max_features: int = settings.ORB_N_FEATURES
+) -> Tuple[List[cv2.KeyPoint], Optional[np.ndarray]]:
+    """
+    Convenience helper extracting ORB keypoints and descriptors from a BGR or Gray image.
+    """
+    if len(image_bgr.shape) == 3:
+        gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image_bgr
+    feats = extract_orb_features(gray, n_features=max_features)
+    return feats.keypoints, feats.descriptors

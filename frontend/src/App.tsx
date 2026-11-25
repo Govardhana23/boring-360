@@ -127,23 +127,15 @@ export const App: React.FC = () => {
   const handleLoadSampleDataset = async () => {
     try {
       setIsLoadingSample(true);
-      const res = await fetch('/api/sample-dataset');
-      if (res.ok) {
-        // Trigger auto creation with sample dataset
-        const startRes = await fetch('/api/create-sample-panorama', { method: 'POST' });
-        if (startRes.ok) {
-          const job = await startRes.json();
-          setCurrentJobId(job.job_id);
-          setJobStatus(job);
-          setIsProcessing(true);
-          setSelectedPanorama(null);
-          setViewerConfig(null);
-          return;
-        }
-      }
-      alert('Generating synthetic test panorama for evaluation...');
+      const job = await api.createSamplePanorama();
+      setCurrentJobId(job.job_id);
+      setJobStatus(job);
+      setIsProcessing(true);
+      setSelectedPanorama(null);
+      setViewerConfig(null);
     } catch (e) {
       console.error('Sample dataset load error:', e);
+      alert('Could not start sample dataset processing. Please verify backend is running.');
     } finally {
       setIsLoadingSample(false);
     }

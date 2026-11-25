@@ -1,6 +1,18 @@
 import { JobStatusResponse, PanoramaMetadata, PanoramaViewerConfig } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const isLocal = typeof window !== 'undefined' && (
+  window.location.hostname === 'localhost' || 
+  window.location.hostname === '127.0.0.1'
+);
+
+export const BACKEND_ORIGIN = isLocal ? '' : 'https://boring360-backend.onrender.com';
+export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || `${BACKEND_ORIGIN}/api`;
+
+export function resolveMediaUrl(url?: string | null): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${BACKEND_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
 export const api = {
   async checkHealth(): Promise<boolean> {
@@ -45,7 +57,12 @@ export const api = {
     if (!res.ok) {
       throw new Error('Failed to retrieve panoramas');
     }
-    return res.json();
+    const data: PanoramaMetadata[] = await res.json();
+    return data.map(item => ({
+      ...item,
+      image_url: resolveMediaUrl(item.image_url),
+      thumbnail_url: item.thumbnail_url ? resolveMediaUrl(item.thumbnail_url) : undefined
+    }));
   },
 
   async getPanorama(panoramaId: string): Promise<PanoramaMetadata> {
@@ -53,7 +70,12 @@ export const api = {
     if (!res.ok) {
       throw new Error(`Failed to retrieve panorama ${panoramaId}`);
     }
-    return res.json();
+    const data: PanoramaMetadata = await res.json();
+    return {
+      ...data,
+      image_url: resolveMediaUrl(data.image_url),
+      thumbnail_url: data.thumbnail_url ? resolveMediaUrl(data.thumbnail_url) : undefined
+    };
   },
 
   async getPanoramaViewerConfig(panoramaId: string): Promise<PanoramaViewerConfig> {
@@ -61,7 +83,11 @@ export const api = {
     if (!res.ok) {
       throw new Error(`Failed to retrieve viewer config for panorama ${panoramaId}`);
     }
-    return res.json();
+    const data: PanoramaViewerConfig = await res.json();
+    return {
+      ...data,
+      image_url: resolveMediaUrl(data.image_url)
+    };
   },
 
   async deletePanorama(panoramaId: string): Promise<void> {
@@ -71,6 +97,18 @@ export const api = {
     if (!res.ok) {
       throw new Error(`Failed to delete panorama ${panoramaId}`);
     }
+  },
+
+  async getSampleDataset(): Promise<any> {
+    const res = await fetch(`${API_BASE}/sample-dataset`);
+    if (!res.ok) throw new Error('Failed to get sample dataset info');
+    return res.json();
+  },
+
+  async createSamplePanorama(): Promise<JobStatusResponse> {
+    const res = await fetch(`${API_BASE}/create-sample-panorama`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to create sample panorama');
+    return res.json();
   },
 
   getImageUrl(panoramaId: string): string {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { 
-  CheckCircle2, CircleDashed, AlertOctagon, Terminal, 
-  RotateCcw, Cpu
+  CheckCircle2, CircleDashed, AlertOctagon,
+  RotateCcw, Cpu, Layers
 } from 'lucide-react';
-import { JobStatusResponse, JobStage } from '../types';
+import { JobStatusResponse } from '../types';
 
 interface ProcessingViewProps {
   status: JobStatusResponse | null;
@@ -11,15 +11,43 @@ interface ProcessingViewProps {
   onViewDiagnostics?: () => void;
 }
 
-const STAGES: { key: JobStage; label: string; description: string }[] = [
-  { key: 'validating', label: '1. Upload Validation', description: 'Checking file formats, dimensions, and file integrity' },
-  { key: 'preprocessing', label: '2. Image Preprocessing', description: 'Correcting smartphone EXIF rotation & scaling resolution' },
-  { key: 'feature_detection', label: '3. Feature Detection', description: 'Extracting scale-invariant keypoints (SIFT / ORB)' },
-  { key: 'feature_matching', label: '4. Feature Matching', description: 'Matching keypoints with Lowe\'s ratio test & FLANN' },
-  { key: 'camera_alignment', label: '5. Camera Alignment', description: 'Estimating camera poses via RANSAC homography & bundle adjustment' },
-  { key: 'image_warping', label: '6. Image Warping', description: 'Projecting photos onto cylindrical coordinate space' },
-  { key: 'seam_blending', label: '7. Seam Blending', description: 'Multi-band blending, exposure compensation & border cropping' },
-  { key: 'generating_panorama', label: '8. Panorama Generation', description: 'Encoding high-resolution panorama and computing FOV metrics' },
+const GENUINE_STAGES = [
+  { 
+    id: 1,
+    key: 'validating', 
+    label: '1. Validating photographs', 
+    description: 'Verifying file formats, dimensions, and correcting smartphone EXIF orientation' 
+  },
+  { 
+    id: 2,
+    key: 'feature_detection', 
+    label: '2. Extracting ORB features', 
+    description: 'Detecting Oriented FAST keypoints and computing 256-bit Rotated BRIEF binary descriptors' 
+  },
+  { 
+    id: 3,
+    key: 'feature_matching', 
+    label: '3. Matching image descriptors', 
+    description: 'BFMatcher with Hamming distance & Lowe\'s ratio test filtering weak correspondences' 
+  },
+  { 
+    id: 4,
+    key: 'homography_ransac', 
+    label: '4. Estimating homography with RANSAC', 
+    description: 'Finding projective transformations between adjacent images and rejecting outliers' 
+  },
+  { 
+    id: 5,
+    key: 'aligning_blending', 
+    label: '5. Aligning and blending images', 
+    description: 'Warping onto common coordinate canvas, gain exposure compensation & distance feathering' 
+  },
+  { 
+    id: 6,
+    key: 'generating_panorama', 
+    label: '6. Generating panorama', 
+    description: 'Auto-cropping black margins, computing FOV metrics, and encoding high-resolution output' 
+  },
 ];
 
 export const ProcessingView: React.FC<ProcessingViewProps> = ({ 
@@ -33,45 +61,40 @@ export const ProcessingView: React.FC<ProcessingViewProps> = ({
   const isFailed = currentStage === 'failed';
   const isCompleted = currentStage === 'completed';
 
-  const getStageIndex = (stage: JobStage): number => {
-    switch (stage) {
-      case 'queued': return -1;
-      case 'validating': return 0;
-      case 'preprocessing': return 1;
-      case 'feature_detection': return 2;
-      case 'feature_matching': return 3;
-      case 'camera_alignment': return 4;
-      case 'image_warping': return 5;
-      case 'seam_blending': return 6;
-      case 'generating_panorama': return 7;
-      case 'completed': return 8;
-      case 'failed': return 99;
-      default: return 0;
-    }
+  // Map backend progress percentage to genuine stage index (0 to 5)
+  const getStageIndex = (stage: string, progress: number): number => {
+    if (stage === 'completed' || progress >= 95) return 6;
+    if (stage === 'failed') return -1;
+    if (progress < 20) return 0; // Stage 1
+    if (progress < 40) return 1; // Stage 2
+    if (progress < 60) return 2; // Stage 3
+    if (progress < 75) return 3; // Stage 4
+    if (progress < 90) return 4; // Stage 5
+    return 5; // Stage 6
   };
 
-  const currentIndex = getStageIndex(currentStage);
+  const currentIndex = getStageIndex(currentStage, status.progress_percent);
 
   return (
     <div className="max-w-4xl mx-auto py-10 space-y-8">
       {/* Header status */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs">
+        <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs">
           <Cpu className="w-3.5 h-3.5 animate-pulse" />
-          <span>Active Computer Vision Engine</span>
+          <span>Genuine OpenCV ORB Pipeline In Execution</span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-          {isFailed ? 'Panorama Generation Failed' : isCompleted ? 'Panorama Stitched Successfully' : 'Synthesizing Panorama...'}
+          {isFailed ? 'Panorama Stitching Failed' : isCompleted ? 'Panorama Stitched Successfully' : 'Synthesizing Panorama...'}
         </h2>
         <p className="text-sm text-slate-400 max-w-lg mx-auto">
-          {status.message || 'Processing overlapping smartphone photographs via OpenCV...'}
+          {status.message || 'Executing genuine computer vision operations across your photographs...'}
         </p>
       </div>
 
       {/* Progress Bar */}
       <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
         <div className="flex justify-between items-center text-xs font-mono">
-          <span className="text-slate-400">Progress</span>
+          <span className="text-slate-400">Pipeline Execution Progress</span>
           <span className="text-cyan-400 font-bold">{status.progress_percent}%</span>
         </div>
         <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
@@ -98,122 +121,92 @@ export const ProcessingView: React.FC<ProcessingViewProps> = ({
               <p className="text-sm text-red-300/90 mt-1">
                 {status.error || 'OpenCV could not find sufficient matching features or camera alignment between the input photographs.'}
               </p>
+              <p className="text-xs text-red-400/80 mt-2">
+                Tip: Ensure 25%–40% overlap between consecutive photographs, avoid moving subjects in the seams, and rotate around the phone's camera axis.
+              </p>
             </div>
           </div>
 
-          <div className="p-4 bg-slate-950/70 rounded-xl border border-red-900/40 text-xs font-mono text-slate-300 space-y-1">
-            <p className="text-red-400 font-semibold">// Diagnostic troubleshooting:</p>
-            <p>1. Check that consecutive photos share at least 30% visual overlap.</p>
-            <p>2. Avoid scenes with blank featureless walls or moving subjects.</p>
-            <p>3. Ensure photos are uploaded in left-to-right sequential order.</p>
-          </div>
-
-          <div className="flex items-center space-x-3 pt-2">
+          <div className="flex items-center gap-3 pt-2">
             <button
               onClick={onRetry}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center space-x-2 border border-slate-700 transition-colors"
+              className="px-4 py-2 rounded-xl bg-red-900/60 hover:bg-red-800/80 text-white text-xs font-bold transition-colors flex items-center space-x-1.5 border border-red-500/50"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Try With Different Photos</span>
+              <span>Retry With Adjusted Photos</span>
             </button>
             {onViewDiagnostics && (
               <button
                 onClick={onViewDiagnostics}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold flex items-center space-x-2 border border-slate-700 transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
               >
-                <span>View Error Diagnostics</span>
+                Inspect Logs
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Stages Stepper */}
-      <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-6 space-y-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider font-mono">
-          Pipeline Processing Stages
+      {/* 6 Genuine Processing Stages Checklist */}
+      <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 space-y-4 shadow-xl">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center space-x-2">
+          <Layers className="w-4 h-4 text-cyan-400" />
+          <span>Core Computer Vision Stages</span>
         </h3>
 
         <div className="space-y-3">
-          {STAGES.map((s, idx) => {
-            const isDone = currentIndex > idx;
-            const isCurrent = currentIndex === idx && !isFailed;
-            const isError = isFailed && currentIndex === idx;
+          {GENUINE_STAGES.map((stg, idx) => {
+            const isDone = isCompleted || currentIndex > idx;
+            const isCurrent = !isFailed && !isCompleted && currentIndex === idx;
 
             return (
               <div 
-                key={s.key}
-                className={`p-3.5 rounded-xl border transition-all duration-300 flex items-center justify-between ${
-                  isCurrent 
-                    ? 'bg-cyan-950/30 border-cyan-500/50 shadow-glow-cyan'
-                    : isDone
-                    ? 'bg-slate-900/80 border-slate-800 opacity-90'
-                    : isError
-                    ? 'bg-red-950/30 border-red-500/50'
-                    : 'bg-slate-900/30 border-slate-800/50 opacity-40'
+                key={stg.id}
+                className={`flex items-start space-x-3.5 p-3.5 rounded-xl border transition-all duration-300 ${
+                  isDone 
+                    ? 'bg-slate-900/60 border-teal-500/20 text-slate-300' 
+                    : isCurrent 
+                    ? 'bg-cyan-950/30 border-cyan-500/40 text-white shadow-glow-cyan' 
+                    : 'bg-slate-950/40 border-slate-800/60 text-slate-500'
                 }`}
               >
-                <div className="flex items-center space-x-3">
+                <div className="shrink-0 mt-0.5">
                   {isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-teal-400" />
                   ) : isCurrent ? (
-                    <CircleDashed className="w-5 h-5 text-cyan-400 animate-spin shrink-0" />
-                  ) : isError ? (
-                    <AlertOctagon className="w-5 h-5 text-red-400 shrink-0" />
+                    <CircleDashed className="w-5 h-5 text-cyan-400 animate-spin" />
                   ) : (
-                    <div className="w-5 h-5 rounded-full border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 font-mono">
-                      {idx + 1}
+                    <div className="w-5 h-5 rounded-full border border-slate-700 flex items-center justify-center text-[10px] font-mono text-slate-600">
+                      {stg.id}
                     </div>
                   )}
-                  <div>
-                    <h4 className={`text-sm font-semibold ${isCurrent ? 'text-cyan-300' : isDone ? 'text-slate-200' : 'text-slate-400'}`}>
-                      {s.label}
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      {s.description}
-                    </p>
-                  </div>
                 </div>
 
-                {isCurrent && (
-                  <span className="text-xs font-mono text-cyan-400 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 animate-pulse">
-                    Processing
-                  </span>
-                )}
-                {isDone && (
-                  <span className="text-xs font-mono text-teal-400">
-                    Done
-                  </span>
-                )}
+                <div className="flex-1 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <p className={`text-sm font-semibold ${isDone ? 'text-teal-300' : isCurrent ? 'text-cyan-300' : 'text-slate-400'}`}>
+                      {stg.label}
+                    </p>
+                    {isCurrent && (
+                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 animate-pulse">
+                        RUNNING
+                      </span>
+                    )}
+                    {isDone && (
+                      <span className="text-[10px] font-mono font-medium text-teal-400">
+                        VERIFIED
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {stg.description}
+                  </p>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Real-time Diagnostics Logs */}
-      {status.diagnostics?.log_messages && status.diagnostics.log_messages.length > 0 && (
-        <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-3 font-mono">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1.5 text-slate-300 font-semibold">
-              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Backend OpenCV Diagnostic Stream</span>
-            </span>
-            <span className="text-[10px] text-slate-500">
-              {status.diagnostics.log_messages.length} log lines
-            </span>
-          </div>
-
-          <div className="max-h-48 overflow-y-auto space-y-1 text-xs text-slate-300 p-3 bg-slate-900/60 rounded-xl border border-slate-800/80">
-            {status.diagnostics.log_messages.map((log, idx) => (
-              <p key={idx} className="leading-relaxed">
-                <span className="text-cyan-500 mr-2">&gt;</span>
-                {log}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

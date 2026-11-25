@@ -71,11 +71,22 @@ def test_stitching_handles_insufficient_images():
     assert "At least 2 images" in result.status_message
 
 
-def test_stitching_detects_disconnected_sequence():
+def test_stitching_detects_disconnected_sequence(tmp_path):
     """Verify rejection when images have no visual overlap (disconnected sequence)."""
-    sample_files = sorted(list(SAMPLE_DIR.glob("smartphone_shot_*.jpg")))
-    # Pair shot 1 and shot 8 which have no overlap
-    disconnected = [sample_files[0], sample_files[7]]
-    result = run_orb_stitching_pipeline(disconnected)
+    # Create two completely disjoint textured images
+    img1 = np.zeros((600, 800, 3), dtype=np.uint8)
+    for y in range(0, 600, 40):
+        cv2.line(img1, (0, y), (800, y), (255, 255, 255), 3)
+
+    img2 = np.zeros((600, 800, 3), dtype=np.uint8)
+    for r in range(20, 280, 30):
+        cv2.circle(img2, (400, 300), r, (255, 255, 255), 3)
+
+    p1 = tmp_path / "disjoint_1.jpg"
+    p2 = tmp_path / "disjoint_2.jpg"
+    cv2.imwrite(str(p1), img1)
+    cv2.imwrite(str(p2), img2)
+
+    result = run_orb_stitching_pipeline([p1, p2])
     assert result.success is False
     assert ("Disconnected" in result.status_message or "Insufficient" in result.status_message or "Alignment failed" in result.status_message)

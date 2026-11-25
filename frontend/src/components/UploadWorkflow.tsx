@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { 
   Upload, X, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, 
-  Sparkles, Info, ShieldCheck
+  Sparkles, Info, ShieldCheck, Compass, Camera
 } from 'lucide-react';
 import { UploadItem } from '../types';
 
@@ -17,7 +17,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
   isLoadingSample 
 }) => {
   const [items, setItems] = useState<UploadItem[]>([]);
-  const [title, setTitle] = useState<string>('Indoor Living Space 360');
+  const [title, setTitle] = useState<string>('Smartphone Living Space Panorama');
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,8 +35,8 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         return;
       }
 
-      if (file.size > 20 * 1024 * 1024) {
-        newErrors.push(`File "${file.name}" exceeds 20MB limit (${(file.size / (1024 * 1024)).toFixed(1)}MB).`);
+      if (file.size > 25 * 1024 * 1024) {
+        newErrors.push(`File "${file.name}" exceeds 25MB limit (${(file.size / (1024 * 1024)).toFixed(1)}MB).`);
         return;
       }
 
@@ -111,7 +111,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
 
   const handleGenerate = () => {
     if (items.length < 2) {
-      setValidationErrors(['Please upload at least 2 overlapping photographs.']);
+      setValidationErrors(['Please upload at least 2 overlapping photographs (8–12 recommended).']);
       return;
     }
     const files = items.map(i => i.file);
@@ -122,35 +122,38 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 py-6">
-      {/* Title & Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <span>New Panorama Studio</span>
-            <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              Guided 8–12 Capture
-            </span>
+      {/* Hero Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
+        <div className="space-y-2">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-mono text-xs">
+            <Camera className="w-3.5 h-3.5" />
+            <span>OpenCV ORB Stitching Pipeline</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Turn Your Photos Into Immersive Panoramas.
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Upload sequential overlapping photos captured by rotating your smartphone around a single viewpoint.
+          <p className="text-sm text-slate-400 max-w-2xl leading-relaxed">
+            Upload 8–12 sequential overlapping smartphone photographs. Boring 360 detects ORB features, matches binary descriptors with Hamming distance, calculates RANSAC homographies, and blends them into an interactive panorama.
           </p>
         </div>
 
         {/* 1-Click Sample Dataset Button */}
-        <button
-          onClick={onLoadSampleData}
-          disabled={isLoadingSample}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-cyan-300 border border-cyan-500/30 text-sm font-medium transition-all shadow-sm hover:shadow-glow-cyan"
-        >
-          <Sparkles className={`w-4 h-4 text-cyan-400 ${isLoadingSample ? 'animate-spin' : ''}`} />
-          <span>{isLoadingSample ? 'Loading Demo Set...' : 'Load Sample 8-Shot Dataset'}</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <button
+            onClick={onLoadSampleData}
+            disabled={isLoadingSample}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-cyan-300 border border-cyan-500/30 text-sm font-semibold transition-all shadow-sm hover:shadow-glow-cyan"
+          >
+            <Sparkles className={`w-4 h-4 text-cyan-400 ${isLoadingSample ? 'animate-spin' : ''}`} />
+            <span>{isLoadingSample ? 'Loading Demo Set...' : 'Load Sample 8-Shot Dataset'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Project Title Input */}
       <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row items-center gap-4">
         <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider w-full sm:w-auto">
-          Project Title:
+          Panorama Title:
         </label>
         <input
           type="text"
@@ -159,6 +162,9 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
           placeholder="e.g., Living Room Sunset 360"
           className="w-full sm:flex-1 bg-slate-800/80 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
         />
+        <div className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-cyan-400">
+          Count: {items.length}/12
+        </div>
       </div>
 
       {/* Upload Drop Zone */}
@@ -190,12 +196,16 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
           Drag and drop smartphone photos here
         </h3>
         <p className="text-sm text-slate-400 max-w-md mx-auto mb-4">
-          Or <span className="text-cyan-400 underline font-medium">browse files</span> from your device. Supported: JPG, JPEG, PNG, WEBP (up to 20MB each).
+          Or <span className="text-cyan-400 underline font-medium">browse files</span> from your computer. Supported formats: JPG, JPEG, PNG, WEBP (up to 25MB each).
         </p>
 
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-300 font-mono">
-          <Info className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Recommended: 8 to 12 overlapping images ordered from left to right</span>
+        <div className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-300 font-mono">
+          <span className="text-cyan-400 font-bold">Image Counter:</span>
+          <span className={`font-bold ${isCountOptimal ? 'text-teal-400' : 'text-amber-400'}`}>
+            {items.length}/12 photographs selected
+          </span>
+          <span className="text-slate-500">•</span>
+          <span>Recommended: 8–12 photos</span>
         </div>
       </div>
 
@@ -214,13 +224,13 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         </div>
       )}
 
-      {/* Thumbnails & Reordering List */}
+      {/* Thumbnails & Reordering Grid */}
       {items.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <h3 className="text-lg font-bold text-white">
-                Selected Photographs ({items.length})
+                Selected Photographs ({items.length}/12)
               </h3>
               <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-medium ${
                 isCountOptimal 
@@ -229,7 +239,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
               }`}>
-                {items.length} / 8–12 images
+                {items.length < 8 ? `${items.length}/12 (add ${8 - items.length} more for optimal 360)` : `${items.length}/12 (optimal)`}
               </span>
             </div>
 
@@ -245,7 +255,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
           <div className="text-xs text-slate-400 flex items-center gap-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
             <Info className="w-4 h-4 text-cyan-400 shrink-0" />
             <span>
-              Images should be arranged in rotational order (e.g., Image 1 $\rightarrow$ Image 2 $\rightarrow$ ...). Use the arrows to reorder if necessary.
+              Arrange photos in rotational sequence order (Shot #1 $\rightarrow$ Shot #2 $\rightarrow$ ...). Use arrows to adjust ordering before stitching.
             </span>
           </div>
 
@@ -318,29 +328,33 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         </div>
       )}
 
-      {/* Capture Quality Checklist & Rules */}
+      {/* Capture Guidelines Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800 space-y-3">
           <div className="flex items-center space-x-2 text-cyan-400 font-bold text-sm">
             <ShieldCheck className="w-4 h-4" />
-            <span>Smartphone Capture Quality Checklist</span>
+            <span>Smartphone Capture Guidelines</span>
           </div>
           <ul className="text-xs text-slate-300 space-y-2">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-              <span><strong>Same Viewpoint:</strong> Rotate on the phone's camera axis without taking steps around the room.</span>
+              <span><strong>Same Position:</strong> Capture images from approximately the same physical location.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-              <span><strong>25%–40% Overlap:</strong> Ensure consecutive photos share recognizable features for SIFT matching.</span>
+              <span><strong>25%–40% Overlap:</strong> Maintain consistent overlap between consecutive photos for feature matching.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-              <span><strong>Consistent Exposure & Focus:</strong> Lock camera exposure/focus to avoid abrupt brightness seams.</span>
+              <span><strong>Rotate on Optical Center:</strong> Rotate the camera around its optical center to minimize parallax.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-              <span><strong>Static Environment:</strong> Avoid moving people, pets, or moving vehicles in the overlap zones.</span>
+              <span><strong>Avoid Translation & Blur:</strong> Avoid sudden camera translation, motion blur, or drastic lighting changes.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+              <span><strong>Static Scene:</strong> Avoid moving people or objects in the overlapping boundary regions.</span>
             </li>
           </ul>
         </div>
@@ -348,11 +362,11 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
         <div className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center space-x-2 text-slate-200 font-bold text-sm mb-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>CV Engine Pipeline Ready</span>
+              <Compass className="w-4 h-4 text-cyan-400" />
+              <span>Projection & Truth in Advertising</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Upon clicking Generate, Boring 360 executes feature detection (SIFT/ORB), camera bundle adjustment, RANSAC homography estimation, multi-band seam blending, and auto-cropping on the Python backend.
+              A sequence of 8–12 horizontally captured smartphone photos produces an authentic wide cylindrical panorama. The interactive viewer will truthfully display the actual angular coverage rather than falsely labelling a partial horizontal sweep as a complete 360° × 180° sphere.
             </p>
           </div>
 
@@ -364,7 +378,7 @@ export const UploadWorkflow: React.FC<UploadWorkflowProps> = ({
               className="w-full py-3.5 px-6 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 shadow-glow-cyan"
             >
               <Sparkles className="w-4 h-4" />
-              <span>GENERATE PANORAMA ({items.length} {items.length === 1 ? 'IMAGE' : 'IMAGES'})</span>
+              <span>GENERATE PANORAMA ({items.length}/12 SELECTED)</span>
             </button>
             {items.length < 2 && (
               <p className="text-[11px] text-slate-500 text-center mt-2 font-mono">

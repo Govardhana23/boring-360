@@ -41,8 +41,11 @@ export interface PairwiseOverlapScore {
 export interface JobDiagnostics {
   input_image_count: number;
   usable_image_count: number;
-  image_assessments: ImageQualityAssessment[];
-  pairwise_overlaps: PairwiseOverlapScore[];
+  image_assessments?: ImageQualityAssessment[];
+  pairwise_overlaps?: PairwiseOverlapScore[];
+  pairwise_matches?: any[];
+  keypoints?: number[];
+  projection_type?: string;
   stitching_method_used: string;
   stitching_status_code: number;
   stitching_status_message: string;
@@ -54,7 +57,8 @@ export interface JobDiagnostics {
   aspect_ratio: number;
   elapsed_time_seconds: number;
   warnings: string[];
-  log_messages: string[];
+  log_messages?: string[];
+  logs?: string[];
 }
 
 export interface JobStatusResponse {
