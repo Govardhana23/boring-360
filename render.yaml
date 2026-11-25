@@ -16,7 +16,6 @@ services:
   - type: web
     name: boring360-frontend
     env: static
-    region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
